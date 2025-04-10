@@ -1,16 +1,19 @@
 package com.yuhaopro.acp.controllers;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,7 +31,7 @@ import com.yuhaopro.acp.data.RuntimeEnvironment;
  * configured dynamically during runtime.
  */
 @RestController()
-@RequestMapping("/api/v1/rabbitmq")
+@RequestMapping("/rabbitMq")
 public class RabbitMqController {
 
     private static final Logger logger = LoggerFactory.getLogger(RabbitMqController.class);
@@ -43,7 +46,7 @@ public class RabbitMqController {
         factory.setPort(environment.getRabbitMqPort());
     }
 
-    @PostMapping("/rabbitMq/{queueName}/{symbolCount}")
+    @PutMapping("/{queueName}/{messageCount}")
     public void sendMessageCount(@PathVariable String queueName, @PathVariable int messageCount) {
         logger.info("Writing {} symbols in queue {}", messageCount, queueName);
         try (Connection connection = factory.newConnection();
@@ -71,28 +74,43 @@ public class RabbitMqController {
         }
     }
 
-    @GetMapping("/rabbitMq/{queueName}/{consumeTimeMsec}")
-    public List<String> receiveStockSymbols(@PathVariable String queueName, @PathVariable int consumeTimeMsec) {
-        logger.info(String.format("Reading stock-symbols from queue %s", queueName));
+    @GetMapping("/{queueName}/{timeoutInMsec}")
+    public List<String> receiveMessageList(@PathVariable String queueName, @PathVariable int timeoutInMsec) {
+        logger.info(String.format("Reading messages from queue %s with timeout %d ms", queueName, timeoutInMsec));
         List<String> result = new ArrayList<>();
+        Instant startTime = Instant.now();
+        Instant endTime = startTime.plus(Duration.ofMillis(timeoutInMsec));
+        AtomicBoolean timeoutReached = new AtomicBoolean(false);
 
         try (Connection connection = factory.newConnection();
-                Channel channel = connection.createChannel()) {
+             Channel channel = connection.createChannel()) {
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                System.out.printf("[%s]:%s -> %s", queueName, delivery.getEnvelope().getRoutingKey(), message);
-                result.add(message);
+                if (!timeoutReached.get()) {
+                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                    System.out.printf("[%s]:%s -> %s\n", queueName, delivery.getEnvelope().getRoutingKey(), message);
+                    result.add(message);
+                } else {
+                    channel.basicCancel(consumerTag); //cancel the consumer if timeout is reached.
+                }
             };
+            String consumerTag = channel.basicConsume(queueName, true, deliverCallback, consumerTagLocal -> {});
 
-            System.out.println("start consuming events - to stop press CTRL+C");
-            // Consume with Auto-ACK
-            channel.basicConsume(queueName, true, deliverCallback, consumerTag -> {
-            });
-            Thread.sleep(consumeTimeMsec);
+            while (Instant.now().isBefore(endTime) && !timeoutReached.get()) {
+                try {
+                    Thread.sleep(100); // Check every 100ms to prevent high cpu usage during this spinlock
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while waiting for timeout", e);
+                }
+            }
+            timeoutReached.set(true); // Signal timeout.
+            channel.basicCancel(consumerTag); // To exit if the prev message hasn't finish processing.
 
             System.out.printf("done consuming events. %d record(s) received\n", result.size());
+
         } catch (Exception e) {
+            logger.error("Error consuming messages", e);
             throw new RuntimeException(e);
         }
 
