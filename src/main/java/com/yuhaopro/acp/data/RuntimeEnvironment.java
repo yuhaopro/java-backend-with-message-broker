@@ -31,6 +31,7 @@ public class RuntimeEnvironment {
     private String kafkaSecurityProtocol;
     private String kafkaSaslMechanism;
     private String kafkaSaslJaasConfig;
+    private String studentNumber = "s2768394";
 
     /**
      * Configures and retrieves the runtime environment settings by reading from

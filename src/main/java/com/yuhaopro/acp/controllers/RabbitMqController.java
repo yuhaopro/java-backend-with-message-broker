@@ -54,7 +54,7 @@ public class RabbitMqController {
 
             channel.queueDeclare(queueName, false, false, false, null);
 
-            final String uuid = "s2768394";
+            final String uuid = environment.getStudentNumber();
             for (Integer i = 0; i < messageCount; i++) {
 
                 Map<String, String> data = new HashMap<>();
