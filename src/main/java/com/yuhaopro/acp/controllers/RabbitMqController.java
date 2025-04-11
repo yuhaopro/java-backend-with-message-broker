@@ -66,11 +66,11 @@ public class RabbitMqController {
 
                 // using nameless exchange
                 channel.basicPublish("", queueName, null, jsonMessage.getBytes());
-                System.out.println(" [x] Sent message: " + jsonMessage + " to queue: " + queueName);
+                logger.info(" [x] Sent message: {} to queue: {}", jsonMessage, queueName);
             }
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            logger.error("Exception: ", e);
         }
     }
 
@@ -88,7 +88,7 @@ public class RabbitMqController {
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                 if (!timeoutReached.get()) {
                     String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    System.out.printf("[%s]:%s -> %s\n", queueName, delivery.getEnvelope().getRoutingKey(), message);
+                    logger.info("{}:{} -> {}", queueName, delivery.getEnvelope().getRoutingKey(), message);
                     result.add(message);
                 } else {
                     channel.basicCancel(consumerTag); //cancel the consumer if timeout is reached.
@@ -101,17 +101,16 @@ public class RabbitMqController {
                     Thread.sleep(100); // Check every 100ms to prevent high cpu usage during this spinlock
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException("Interrupted while waiting for timeout", e);
+                    logger.error("Interrupted while waiting for timeout", e);
                 }
             }
             timeoutReached.set(true); // Signal timeout.
             channel.basicCancel(consumerTag); // To exit if the prev message hasn't finish processing.
 
-            System.out.printf("done consuming events. %d record(s) received%n", result.size());
+            logger.info("done consuming events. {} record(s) received", result.size());
 
         } catch (Exception e) {
             logger.error("Error consuming messages", e);
-            throw new RuntimeException(e);
         }
 
         return result;

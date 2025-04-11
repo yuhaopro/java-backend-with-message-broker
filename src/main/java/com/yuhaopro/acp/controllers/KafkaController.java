@@ -124,10 +124,11 @@ public class KafkaController {
         logger.info("Reading from topic {}", readTopic);
         Properties kafkaProps = getKafkaProperties(environment);
 
-        try (var consumer = new KafkaConsumer<String, String>(kafkaProps)) {
+        try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(kafkaProps)) {
             consumer.subscribe(Collections.singletonList(readTopic));
             ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(timeoutInMsec));
             for (ConsumerRecord<String, String> singleRecord : records) {
+                logger.info("Value: {}", singleRecord.value());
                 results.add(singleRecord.value());
             }
         }
