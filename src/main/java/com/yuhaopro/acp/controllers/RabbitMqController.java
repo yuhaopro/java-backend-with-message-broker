@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DeliverCallback;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
+import com.yuhaopro.acp.services.RabbitMqService;
 
 /**
  * RabbitMqController is a REST controller that provides endpoints for sending
@@ -37,19 +37,17 @@ public class RabbitMqController {
     private static final Logger logger = LoggerFactory.getLogger(RabbitMqController.class);
     private final RuntimeEnvironment environment;
 
-    private ConnectionFactory factory = null;
+    private final RabbitMqService rabbitMqService;
 
-    public RabbitMqController(RuntimeEnvironment environment) {
+    public RabbitMqController(RuntimeEnvironment environment, RabbitMqService rabbitMqService) {
         this.environment = environment;
-        factory = new ConnectionFactory();
-        factory.setHost(environment.getRabbitMqHost());
-        factory.setPort(environment.getRabbitMqPort());
+        this.rabbitMqService = rabbitMqService;
     }
 
     @PutMapping("/{queueName}/{messageCount}")
     public void sendMessageCount(@PathVariable String queueName, @PathVariable int messageCount) {
         logger.info("Writing {} symbols in queue {}", messageCount, queueName);
-        try (Connection connection = factory.newConnection();
+        try (Connection connection = rabbitMqService.createConnection();
                 Channel channel = connection.createChannel()) {
 
             channel.queueDeclare(queueName, false, false, false, null);
@@ -82,7 +80,7 @@ public class RabbitMqController {
         Instant endTime = startTime.plus(Duration.ofMillis(timeoutInMsec));
         AtomicBoolean timeoutReached = new AtomicBoolean(false);
 
-        try (Connection connection = factory.newConnection();
+        try (Connection connection = rabbitMqService.createConnection();
              Channel channel = connection.createChannel()) {
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
