@@ -76,7 +76,7 @@ public class RabbitMqController {
 
     @GetMapping("/{queueName}/{timeoutInMsec}")
     public List<String> receiveMessageList(@PathVariable String queueName, @PathVariable int timeoutInMsec) {
-        logger.info(String.format("Reading messages from queue %s with timeout %d ms", queueName, timeoutInMsec));
+        logger.info("Reading messages from queue {} with timeout {} ms", queueName, timeoutInMsec);
         List<String> result = new ArrayList<>();
         Instant startTime = Instant.now();
         Instant endTime = startTime.plus(Duration.ofMillis(timeoutInMsec));
@@ -107,7 +107,7 @@ public class RabbitMqController {
             timeoutReached.set(true); // Signal timeout.
             channel.basicCancel(consumerTag); // To exit if the prev message hasn't finish processing.
 
-            System.out.printf("done consuming events. %d record(s) received\n", result.size());
+            System.out.printf("done consuming events. %d record(s) received%n", result.size());
 
         } catch (Exception e) {
             logger.error("Error consuming messages", e);
