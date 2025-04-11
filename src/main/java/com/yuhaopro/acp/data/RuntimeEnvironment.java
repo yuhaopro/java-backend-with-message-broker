@@ -32,6 +32,7 @@ public class RuntimeEnvironment {
     private String kafkaSaslMechanism;
     private String kafkaSaslJaasConfig;
     private String studentNumber = "s2768394";
+    private int kafkaPollingTimeout = 2000;
 
     /**
      * Configures and retrieves the runtime environment settings by reading from

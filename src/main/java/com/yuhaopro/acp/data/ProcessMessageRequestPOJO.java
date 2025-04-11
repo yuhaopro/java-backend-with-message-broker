@@ -1,10 +1,8 @@
 package com.yuhaopro.acp.data;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 public class ProcessMessageBody {
     private String readTopic;
     private String writeQueueGood;
