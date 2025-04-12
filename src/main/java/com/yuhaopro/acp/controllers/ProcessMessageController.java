@@ -2,33 +2,29 @@ package com.yuhaopro.acp.controllers;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
-import com.yuhaopro.acp.data.processMessage.AcpStoragePOJO;
-import com.yuhaopro.acp.data.processMessage.KafkaPOJO;
-import com.yuhaopro.acp.data.processMessage.RabbitMqGoodPOJO;
-import com.yuhaopro.acp.data.processMessage.RequestBodyPOJO;
+import com.yuhaopro.acp.data.process.AcpStoragePOJO;
+import com.yuhaopro.acp.data.process.KafkaPOJO;
+import com.yuhaopro.acp.data.process.RabbitMqBadPOJO;
+import com.yuhaopro.acp.data.process.RabbitMqGoodPOJO;
+import com.yuhaopro.acp.data.process.RequestBodyPOJO;
 import com.yuhaopro.acp.services.AcpStorageService;
 import com.yuhaopro.acp.services.KafkaService;
 import com.yuhaopro.acp.services.RabbitMqService;
 
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import io.lettuce.core.json.JsonObject;
 
 @RestController()
 public class ProcessMessageController {
@@ -52,8 +48,8 @@ public class ProcessMessageController {
         ObjectMapper objectMapper = new ObjectMapper();
         int recordCounter = 0;
         int runningTotalValue = 0;
-        int totalGood = 0;
-        int totalBad = 0;
+        float totalGood = 0;
+        float totalBad = 0;
         boolean keepConsuming = true;
 
         try (KafkaConsumer<String, String> consumer = kafkaService.createKafkaConsumer()) {
@@ -79,29 +75,30 @@ public class ProcessMessageController {
                     if (key.length() == 3 || key.length() == 4) {
                         runningTotalValue += 1;
 
-                        AcpStoragePOJO acpStorageData = new AcpStoragePOJO(kafkaBody.getUid(),
-                                kafkaBody.getKey(),
-                                kafkaBody.getComment(),
-                                kafkaBody.getValue(),
-                                runningTotalValue);
-                        String uuid = acpStorageService.saveToStorage(null);
+                        AcpStoragePOJO acpStorageData = new AcpStoragePOJO(kafkaBody, runningTotalValue);
+                        String uuid = acpStorageService.postToStorage(acpStorageData);
 
-                        RabbitMqGoodPOJO rabbitMqGoodMessage = new RabbitMqGoodPOJO(
-                                uuid,
-                                kafkaBody.getUid(),
-                                kafkaBody.getKey(),
-                                kafkaBody.getComment(),
-                                kafkaBody.getValue(),
-                                runningTotalValue);
-                        rabbitMqService.writeToQueue(requestBody.getWriteQueueGood(), null);
+                        RabbitMqGoodPOJO rabbitMqGoodData = new RabbitMqGoodPOJO(acpStorageData, uuid);
+                        String rabbitMqGoodMessage = objectMapper.writeValueAsString(rabbitMqGoodData);
+                        rabbitMqService.writeToQueue(requestBody.getWriteQueueGood(), rabbitMqGoodMessage.getBytes());
+
+                        totalGood += kafkaBody.getValue();
                     } else {
 
+                        RabbitMqBadPOJO rabbitMqBadData = new RabbitMqBadPOJO(kafkaBody, runningTotalValue);
+                        String rabbitMqBadMessage = objectMapper.writeValueAsString(rabbitMqBadData);
+
+                        rabbitMqService.writeToQueue(requestBody.getWriteQueueBad(), rabbitMqBadMessage.getBytes());
+                        totalBad += kafkaBody.getValue();
                     }
 
                     recordCounter += 1;
 
                 }
             }
+
+            JsonObject total = 
+
         }
     }
 
