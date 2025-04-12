@@ -18,9 +18,12 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.yuhaopro.acp.data.ProcessMessageKafkaPOJO;
-import com.yuhaopro.acp.data.ProcessMessageRequestPOJO;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
+import com.yuhaopro.acp.data.processMessage.AcpStoragePOJO;
+import com.yuhaopro.acp.data.processMessage.KafkaPOJO;
+import com.yuhaopro.acp.data.processMessage.RabbitMqGoodPOJO;
+import com.yuhaopro.acp.data.processMessage.RequestBodyPOJO;
+import com.yuhaopro.acp.services.AcpStorageService;
 import com.yuhaopro.acp.services.KafkaService;
 import com.yuhaopro.acp.services.RabbitMqService;
 
@@ -34,24 +37,31 @@ public class ProcessMessageController {
     private static final Logger logger = LoggerFactory.getLogger(ProcessMessageController.class);
     private final KafkaService kafkaService;
     private final RabbitMqService rabbitMqService;
+    private final AcpStorageService acpStorageService;
 
-    public ProcessMessageController(KafkaService kafkaService, RabbitMqService rabbitMqService, RuntimeEnvironment environment, RuntimeEnvironment CurrentRuntimeEnvironment) {
+    public ProcessMessageController(KafkaService kafkaService, RabbitMqService rabbitMqService,
+            RuntimeEnvironment environment, AcpStorageService acpStorageService) {
         this.environment = environment;
         this.kafkaService = kafkaService;
         this.rabbitMqService = rabbitMqService;
+        this.acpStorageService = acpStorageService;
     }
 
     @PostMapping("/processMessages")
-    public void processMessages(@RequestBody ProcessMessageRequestPOJO requestBody) throws JsonProcessingException {
+    public void processMessages(@RequestBody RequestBodyPOJO requestBody) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
         int recordCounter = 0;
         int runningTotalValue = 0;
+        int totalGood = 0;
+        int totalBad = 0;
         boolean keepConsuming = true;
+
         try (KafkaConsumer<String, String> consumer = kafkaService.createKafkaConsumer()) {
             consumer.subscribe(Collections.singletonList(requestBody.getReadTopic()));
 
             while (keepConsuming) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(environment.getKafkaPollingTimeout()));
+                ConsumerRecords<String, String> records = consumer
+                        .poll(Duration.ofMillis(environment.getKafkaPollingTimeout()));
                 if (records.isEmpty()) {
                     continue;
                 }
@@ -62,25 +72,34 @@ public class ProcessMessageController {
                     }
 
                     logger.info("Value: {}", singleRecord.value());
-                    ProcessMessageKafkaPOJO kafkaBody = objectMapper.readValue(singleRecord.value(), ProcessMessageKafkaPOJO.class);
+                    KafkaPOJO kafkaBody = objectMapper.readValue(singleRecord.value(), KafkaPOJO.class);
                     String key = kafkaBody.getKey();
+
+                    // write good queue
                     if (key.length() == 3 || key.length() == 4) {
                         runningTotalValue += 1;
-                        try (Connection connection = rabbitMqService.createConnection();
-                            Channel channel = connection.createChannel()) {
 
-                            channel.queueDeclare(requestBody.getWriteQueueGood(), false, false, false, null);
-                            channel.basicPublish("", requestBody.getWriteQueueGood(), null, jsonMessage.getBytes());
+                        AcpStoragePOJO acpStorageData = new AcpStoragePOJO(kafkaBody.getUid(),
+                                kafkaBody.getKey(),
+                                kafkaBody.getComment(),
+                                kafkaBody.getValue(),
+                                runningTotalValue);
+                        String uuid = acpStorageService.saveToStorage(null);
 
-                        } catch (Exception e) {
-                            logger.error("Exception: ", e);
-                        }
+                        RabbitMqGoodPOJO rabbitMqGoodMessage = new RabbitMqGoodPOJO(
+                                uuid,
+                                kafkaBody.getUid(),
+                                kafkaBody.getKey(),
+                                kafkaBody.getComment(),
+                                kafkaBody.getValue(),
+                                runningTotalValue);
+                        rabbitMqService.writeToQueue(requestBody.getWriteQueueGood(), null);
                     } else {
 
                     }
 
                     recordCounter += 1;
-                    
+
                 }
             }
         }

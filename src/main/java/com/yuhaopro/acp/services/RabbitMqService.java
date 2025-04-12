@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
@@ -27,6 +28,18 @@ public class RabbitMqService {
 
     public Connection createConnection() throws IOException, TimeoutException {
         return factory.newConnection();
+    }
+
+    public void writeToQueue(String queueName, byte[] messageBytes) {
+        try (Connection connection = this.createConnection();
+            Channel channel = connection.createChannel()) {
+            
+            channel.queueDeclare(queueName, false, false, false, null);
+            channel.basicPublish("", queueName, null, messageBytes);
+
+        } catch (Exception e) {
+            logger.error("Exception: ", e);
+        }
     }
 
 }

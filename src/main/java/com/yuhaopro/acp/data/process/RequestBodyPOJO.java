@@ -1,9 +1,9 @@
-package com.yuhaopro.acp.data;
+package com.yuhaopro.acp.data.process;
 
 import lombok.Data;
 
 @Data
-public class ProcessMessageBody {
+public class RequestBodyPOJO {
     private String readTopic;
     private String writeQueueGood;
     private String writeQueueBad;
