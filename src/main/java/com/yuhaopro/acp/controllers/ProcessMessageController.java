@@ -54,16 +54,16 @@ public class ProcessMessageController {
             consumer.subscribe(Collections.singletonList(requestBody.getReadTopic()));
 
             while (keepConsuming) {
-                ConsumerRecords<String, String> records = consumer
-                        .poll(Duration.ofMillis(environment.getKafkaPollingTimeout()));
-                if (records.isEmpty()) {
+
+                if (recordCounter == requestBody.getMessageCount()) {
+                    keepConsuming = false;
                     continue;
                 }
 
+                ConsumerRecords<String, String> records = consumer
+                        .poll(Duration.ofMillis(environment.getKafkaPollingTimeout()));
+
                 for (ConsumerRecord<String, String> singleRecord : records) {
-                    if (recordCounter > requestBody.getMessageCount()) {
-                        keepConsuming = false;
-                    }
 
                     logger.info("Value: {}", singleRecord.value());
                     KafkaPOJO kafkaData = objectMapper.readValue(singleRecord.value(), KafkaPOJO.class);

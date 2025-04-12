@@ -44,16 +44,28 @@ public class AcpStorageService {
 
             if (responseEntity.getStatusCode() == HttpStatus.OK || responseEntity.getStatusCode() == HttpStatus.CREATED) {
                 uuid = responseEntity.getBody();
-                logger.error("Successfully posted data. Received UUID: {}", uuid);
+                uuid = removeSurroundingQuotes(uuid);
+                logger.info("Successfully posted data. Received UUID: {}", uuid);
             }
 
         } catch (HttpClientErrorException e) {
             logger.error("Client error posting data: {}", e.getResponseBodyAsString());
         } catch (RestClientException e) {
             logger.error("Error posting data to storage endpoint: {}", e.getMessage());
+        } catch (NullPointerException e) {
+            logger.error("UUID is null");
         }
 
     return uuid;
+    }
+
+    public static String removeSurroundingQuotes(String input) {
+        if (input != null && input.length() >= 2 && 
+            input.startsWith("\"") && input.endsWith("\"")) {
+            // Extract the substring between the first and last characters
+            return input.substring(1, input.length() - 1);
+        }
+        return input;
     }
 
     public void  getFromStorage(String uuid) {

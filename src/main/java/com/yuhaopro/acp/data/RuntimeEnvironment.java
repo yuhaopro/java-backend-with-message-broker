@@ -33,9 +33,9 @@ public class RuntimeEnvironment {
     private String kafkaSecurityProtocol;
     private String kafkaSaslMechanism;
     private String kafkaSaslJaasConfig;
-    private String studentNumber = "s2768394";
-    private int kafkaPollingTimeout = 2000;
-    private String acpStorageUrl = "https://acp-storage.azurewebsites.net/api/v1/";
+    private String studentNumber;
+    private int kafkaPollingTimeout;
+    private String acpStorageUrl;
 
     /**
      * Configures and retrieves the runtime environment settings by reading from
@@ -59,11 +59,14 @@ public class RuntimeEnvironment {
         settings.setRedisPort(System.getenv(REDIS_PORT_ENV_VAR) == null ? 6379 : Integer.parseInt(System.getenv(REDIS_PORT_ENV_VAR)));
         settings.setRabbitMqHost(System.getenv(RABBITMQ_HOST_ENV_VAR) == null ? "localhost" : System.getenv(RABBITMQ_HOST_ENV_VAR));
         settings.setRabbitMqPort(System.getenv(RABBITMQ_PORT_ENV_VAR) == null ? 5672 : Integer.parseInt(System.getenv(RABBITMQ_PORT_ENV_VAR)));
-        settings.setAcpStorageUrl(System.getenv(ACP_STORAGE_URL) == null ? "https://acp-storage.azurewebsites.net/api/v1/": System.getenv(ACP_STORAGE_URL));
+        settings.setAcpStorageUrl(System.getenv(ACP_STORAGE_URL) == null ? "https://acp-storage.azurewebsites.net/api/v1/blob": System.getenv(ACP_STORAGE_URL));
+
+        settings.setKafkaPollingTimeout(2000);
+        settings.setStudentNumber("s2768394");
         // if the security is enabled then all must be set - otherwise no security is happening
         if (System.getenv(KAFKA_SECURITY_PROTOCOL_ENV_VAR) != null) {
             if (System.getenv(KAFKA_SASL_MECHANISM_ENV_VAR) == null || System.getenv(KAFKA_SASL_JAAS_CONFIG_ENV_VAR) == null || System.getenv(KAFKA_SECURITY_PROTOCOL_ENV_VAR) == null) {
-                throw new RuntimeException("if security is set up all 3 security attributes must be specified");
+                throw new IllegalArgumentException("if security is set up all 3 security attributes must be specified");
             }
 
             settings.setKafkaSecurityProtocol(System.getenv(KAFKA_SECURITY_PROTOCOL_ENV_VAR));

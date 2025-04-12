@@ -18,13 +18,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
+import com.yuhaopro.acp.data.process.KafkaPOJO;
 import com.yuhaopro.acp.services.KafkaService;
 
 @RestController()
@@ -96,6 +99,38 @@ public class KafkaController {
         }
 
         return results;
+    }
+
+    @PostMapping("/{writeTopic}")
+    public void writeToKafkaTopicWithJSON(@PathVariable String writeTopic, @RequestBody KafkaPOJO kafkaData)
+            throws JsonProcessingException {
+        try (var producer = kafkaService.createKafkaProducer()) {
+            final String uuid = environment.getStudentNumber();
+
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonMessage = objectMapper.writeValueAsString(kafkaData);
+
+            producer.send(new ProducerRecord<>(writeTopic, uuid, jsonMessage), (recordMetadata, ex) -> {
+                if (ex != null) {
+                    ex.printStackTrace();
+
+                } else {
+                    logger.info("Produced event to topic {}: key = {} value = {}", writeTopic,
+                            uuid, jsonMessage);
+                }
+
+            }).get(1000, TimeUnit.MILLISECONDS);
+        } catch (ExecutionException e) {
+            logger.error("execution exc: ", e);
+
+        } catch (TimeoutException e) {
+            logger.error("timeout exc: ", e);
+
+        } catch (InterruptedException e) {
+            logger.error("interrupted exc: ", e);
+            Thread.currentThread().interrupt();
+        }
+
     }
 
 }

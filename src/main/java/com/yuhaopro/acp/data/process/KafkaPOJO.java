@@ -1,11 +1,13 @@
 package com.yuhaopro.acp.data.process;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class KafkaPOJO {
-    private final String uid;
-    private final String key;
-    private final String comment;
-    private final Float value;
+    private String uid;
+    private String key;
+    private String comment;
+    private float value;
 }
