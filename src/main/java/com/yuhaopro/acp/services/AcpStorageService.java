@@ -44,7 +44,7 @@ public class AcpStorageService {
 
             if (responseEntity.getStatusCode() == HttpStatus.OK || responseEntity.getStatusCode() == HttpStatus.CREATED) {
                 uuid = responseEntity.getBody();
-                logger.error("Successfull yposted data. Received UUID: {}", uuid);
+                logger.error("Successfully posted data. Received UUID: {}", uuid);
             }
 
         } catch (HttpClientErrorException e) {

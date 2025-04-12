@@ -17,14 +17,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
 import com.yuhaopro.acp.data.process.AcpStoragePOJO;
 import com.yuhaopro.acp.data.process.KafkaPOJO;
-import com.yuhaopro.acp.data.process.RabbitMqBadPOJO;
 import com.yuhaopro.acp.data.process.RabbitMqGoodPOJO;
+import com.yuhaopro.acp.data.process.RabbitMqTotalPOJO;
 import com.yuhaopro.acp.data.process.RequestBodyPOJO;
 import com.yuhaopro.acp.services.AcpStorageService;
 import com.yuhaopro.acp.services.KafkaService;
 import com.yuhaopro.acp.services.RabbitMqService;
-
-import io.lettuce.core.json.JsonObject;
 
 @RestController()
 public class ProcessMessageController {
@@ -68,37 +66,42 @@ public class ProcessMessageController {
                     }
 
                     logger.info("Value: {}", singleRecord.value());
-                    KafkaPOJO kafkaBody = objectMapper.readValue(singleRecord.value(), KafkaPOJO.class);
-                    String key = kafkaBody.getKey();
+                    KafkaPOJO kafkaData = objectMapper.readValue(singleRecord.value(), KafkaPOJO.class);
+                    String key = kafkaData.getKey();
 
                     // write good queue
                     if (key.length() == 3 || key.length() == 4) {
                         runningTotalValue += 1;
 
-                        AcpStoragePOJO acpStorageData = new AcpStoragePOJO(kafkaBody, runningTotalValue);
+                        AcpStoragePOJO acpStorageData = new AcpStoragePOJO(kafkaData, runningTotalValue);
                         String uuid = acpStorageService.postToStorage(acpStorageData);
 
                         RabbitMqGoodPOJO rabbitMqGoodData = new RabbitMqGoodPOJO(acpStorageData, uuid);
                         String rabbitMqGoodMessage = objectMapper.writeValueAsString(rabbitMqGoodData);
                         rabbitMqService.writeToQueue(requestBody.getWriteQueueGood(), rabbitMqGoodMessage.getBytes());
 
-                        totalGood += kafkaBody.getValue();
+                        totalGood += kafkaData.getValue();
                     } else {
 
-                        RabbitMqBadPOJO rabbitMqBadData = new RabbitMqBadPOJO(kafkaBody, runningTotalValue);
-                        String rabbitMqBadMessage = objectMapper.writeValueAsString(rabbitMqBadData);
+                        String rabbitMqBadMessage = objectMapper.writeValueAsString(kafkaData);
 
                         rabbitMqService.writeToQueue(requestBody.getWriteQueueBad(), rabbitMqBadMessage.getBytes());
-                        totalBad += kafkaBody.getValue();
+                        totalBad += kafkaData.getValue();
                     }
 
                     recordCounter += 1;
 
                 }
             }
+            
+            RabbitMqTotalPOJO rabbitMqTotalGoodPOJO = new RabbitMqTotalPOJO(environment.getStudentNumber(), totalGood);
+            RabbitMqTotalPOJO rabbitMqTotalBadPOJO = new RabbitMqTotalPOJO(environment.getStudentNumber(), totalBad);
 
-            JsonObject total = 
+            String rabbitMqTotalGoodMessage = objectMapper.writeValueAsString(rabbitMqTotalGoodPOJO);
+            String rabbitMqTotalBadMessage = objectMapper.writeValueAsString(rabbitMqTotalBadPOJO);
 
+            rabbitMqService.writeToQueue(requestBody.getWriteQueueGood(), rabbitMqTotalGoodMessage.getBytes());
+            rabbitMqService.writeToQueue(requestBody.getWriteQueueBad(), rabbitMqTotalBadMessage.getBytes());
         }
     }
 
