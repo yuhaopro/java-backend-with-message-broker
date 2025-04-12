@@ -1,5 +1,8 @@
 package com.yuhaopro.acp.data.process;
 
+import lombok.Data;
+
+@Data
 public class RabbitMqBadPOJO {
     private final String uid;
     private final String key;
