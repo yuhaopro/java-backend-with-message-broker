@@ -34,7 +34,7 @@ public class ProcessMessageController {
     private final AcpStorageService acpStorageService;
 
     public ProcessMessageController(KafkaService kafkaService, RabbitMqService rabbitMqService,
-            RuntimeEnvironment environment, AcpStorageService acpStorageService) {
+        RuntimeEnvironment environment, AcpStorageService acpStorageService) {
         this.environment = environment;
         this.kafkaService = kafkaService;
         this.rabbitMqService = rabbitMqService;

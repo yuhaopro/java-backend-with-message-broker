@@ -31,9 +31,6 @@ public class RabbitMqService {
     }
 
     public Connection createConnection() throws IOException, TimeoutException {
-        if (this.connection != null) {
-            return this.connection;
-        }
         return factory.newConnection();
     }
 

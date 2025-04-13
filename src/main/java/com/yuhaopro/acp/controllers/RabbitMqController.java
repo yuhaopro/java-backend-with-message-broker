@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -47,28 +48,25 @@ public class RabbitMqController {
     @PutMapping("/{queueName}/{messageCount}")
     public void sendMessageCount(@PathVariable String queueName, @PathVariable int messageCount) {
         logger.info("Writing {} symbols in queue {}", messageCount, queueName);
-        try (Connection connection = rabbitMqService.createConnection();
-                Channel channel = connection.createChannel()) {
 
-            channel.queueDeclare(queueName, false, false, false, null);
+        final String uuid = environment.getStudentNumber();
+        for (Integer i = 0; i < messageCount; i++) {
 
-            final String uuid = environment.getStudentNumber();
-            for (Integer i = 0; i < messageCount; i++) {
+            Map<String, String> data = new HashMap<>();
+            data.put("uid", uuid);
+            data.put("counter", i.toString());
 
-                Map<String, String> data = new HashMap<>();
-                data.put("uid", uuid);
-                data.put("counter", i.toString());
-
-                ObjectMapper objectMapper = new ObjectMapper();
-                String jsonMessage = objectMapper.writeValueAsString(data);
-
+            ObjectMapper objectMapper = new ObjectMapper();
+            String jsonMessage;
+            try {
+                jsonMessage = objectMapper.writeValueAsString(data);
                 // using nameless exchange
-                channel.basicPublish("", queueName, null, jsonMessage.getBytes());
+                rabbitMqService.writeToQueue(queueName, jsonMessage.getBytes());
                 logger.info(" [x] Sent message: {} to queue: {}", jsonMessage, queueName);
+            } catch (JsonProcessingException e) {
+                logger.error("Failed to write data to json", e);
             }
 
-        } catch (Exception e) {
-            logger.error("Exception: ", e);
         }
     }
 
@@ -81,7 +79,7 @@ public class RabbitMqController {
         AtomicBoolean timeoutReached = new AtomicBoolean(false);
 
         try (Connection connection = rabbitMqService.createConnection();
-             Channel channel = connection.createChannel()) {
+                Channel channel = connection.createChannel()) {
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
                 if (!timeoutReached.get()) {
@@ -89,10 +87,11 @@ public class RabbitMqController {
                     logger.info("{}:{} -> {}", queueName, delivery.getEnvelope().getRoutingKey(), message);
                     result.add(message);
                 } else {
-                    channel.basicCancel(consumerTag); //cancel the consumer if timeout is reached.
+                    channel.basicCancel(consumerTag); // cancel the consumer if timeout is reached.
                 }
             };
-            String consumerTag = channel.basicConsume(queueName, true, deliverCallback, consumerTagLocal -> {});
+            String consumerTag = channel.basicConsume(queueName, true, deliverCallback, consumerTagLocal -> {
+            });
 
             while (Instant.now().isBefore(endTime) && !timeoutReached.get()) {
                 try {
