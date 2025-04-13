@@ -8,7 +8,7 @@ import com.yuhaopro.acp.data.RuntimeEnvironment;
 @Configuration
 public class Config {
     @Bean
-    public RuntimeEnvironment CurrentRuntimeEnvironment() {
+    public RuntimeEnvironment currentRuntimeEnvironment() {
         return RuntimeEnvironment.getEnvironment();
     }
 }
