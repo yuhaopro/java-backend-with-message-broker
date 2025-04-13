@@ -7,7 +7,7 @@ public class AcpStoragePOJO {
     private final String uid;
     private final String key;
     private final String comment;
-    private final Float value;
+    private final float value;
     private final Integer runningTotalValue;
 
     public AcpStoragePOJO(KafkaPOJO data, Integer runningTotalValue) {

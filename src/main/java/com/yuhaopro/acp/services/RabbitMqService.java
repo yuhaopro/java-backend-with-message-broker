@@ -19,8 +19,8 @@ import lombok.Getter;
 @Getter
 public class RabbitMqService {
     private Logger logger = LoggerFactory.getLogger((RabbitMqService.class));
-    private ConnectionFactory factory;
-    private Connection connection;
+    private ConnectionFactory factory = null;
+    private Connection connection = null;
 
     public RabbitMqService(RuntimeEnvironment environment) throws IOException, TimeoutException {
         factory = new ConnectionFactory();
@@ -31,6 +31,9 @@ public class RabbitMqService {
     }
 
     public Connection createConnection() throws IOException, TimeoutException {
+        if (this.connection != null) {
+            return this.connection;
+        }
         return factory.newConnection();
     }
 

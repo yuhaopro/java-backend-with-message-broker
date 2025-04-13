@@ -8,8 +8,8 @@ public class RabbitMqGoodPOJO {
     private final String uid;
     private final String key;
     private final String comment;
-    private final Float value;
-    private final Integer runningTotalValue;
+    private final float value;
+    private final int runningTotalValue;
 
     public RabbitMqGoodPOJO(AcpStoragePOJO data, String uuid) {
         this.uuid = uuid;

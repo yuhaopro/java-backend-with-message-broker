@@ -7,5 +7,5 @@ public class RequestBodyPOJO {
     private String readTopic;
     private String writeQueueGood;
     private String writeQueueBad;
-    private Integer messageCount;
+    private int messageCount;
 }
