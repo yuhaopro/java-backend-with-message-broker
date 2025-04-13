@@ -1,13 +1,11 @@
 package com.yuhaopro.acp.controllers;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,43 +71,34 @@ public class RabbitMqController {
     @GetMapping("/{queueName}/{timeoutInMsec}")
     public List<String> receiveMessageList(@PathVariable String queueName, @PathVariable int timeoutInMsec) {
         logger.info("Reading messages from queue {} with timeout {} ms", queueName, timeoutInMsec);
-        List<String> result = new ArrayList<>();
-        Instant startTime = Instant.now();
-        Instant endTime = startTime.plus(Duration.ofMillis(timeoutInMsec));
-        AtomicBoolean timeoutReached = new AtomicBoolean(false);
+        List<String> results = Collections.synchronizedList(new ArrayList<>());
 
         try (Connection connection = rabbitMqService.createConnection();
                 Channel channel = connection.createChannel()) {
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-                if (!timeoutReached.get()) {
-                    String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                    logger.info("{}:{} -> {}", queueName, delivery.getEnvelope().getRoutingKey(), message);
-                    result.add(message);
-                } else {
-                    channel.basicCancel(consumerTag); // cancel the consumer if timeout is reached.
-                }
+
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                logger.info("{}:{} -> {}", queueName, delivery.getEnvelope().getRoutingKey(), message);
+                results.add(message);
+
             };
+
             String consumerTag = channel.basicConsume(queueName, true, deliverCallback, consumerTagLocal -> {
             });
 
-            while (Instant.now().isBefore(endTime) && !timeoutReached.get()) {
-                try {
-                    Thread.sleep(100); // Check every 100ms to prevent high cpu usage during this spinlock
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    logger.error("Interrupted while waiting for timeout", e);
-                }
-            }
-            timeoutReached.set(true); // Signal timeout.
+            Thread.sleep(timeoutInMsec);
             channel.basicCancel(consumerTag); // To exit if the prev message hasn't finish processing.
 
-            logger.info("done consuming events. {} record(s) received", result.size());
+            logger.info("done consuming events. {} record(s) received", results.size());
 
+        } catch (InterruptedException e) {
+            logger.error("Thread was interrupted", e);
+            Thread.currentThread().interrupt();
         } catch (Exception e) {
-            logger.error("Error consuming messages", e);
+            logger.error("Error reading rabbitmq messages", e);
         }
 
-        return result;
+        return results;
     }
 }

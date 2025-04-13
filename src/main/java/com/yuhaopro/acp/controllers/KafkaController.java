@@ -86,7 +86,7 @@ public class KafkaController {
 
     @GetMapping("/{readTopic}/{timeoutInMsec}")
     public List<String> getTopicMessages(@PathVariable String readTopic, @PathVariable int timeoutInMsec) {
-        List<String> results = new ArrayList<>();
+        List<String> results = Collections.synchronizedList(new ArrayList<>());
         logger.info("Reading from topic {}", readTopic);
 
         try (KafkaConsumer<String, String> consumer = kafkaService.createKafkaConsumer()) {
