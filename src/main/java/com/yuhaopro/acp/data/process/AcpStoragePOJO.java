@@ -8,9 +8,9 @@ public class AcpStoragePOJO {
     private final String key;
     private final String comment;
     private final float value;
-    private final float runningTotalValue;
+    private final int runningTotalValue;
 
-    public AcpStoragePOJO(KafkaPOJO data, float runningTotalValue) {
+    public AcpStoragePOJO(KafkaPOJO data, int runningTotalValue) {
         this.uid = data.getUid();
         this.key = data.getKey();
         this.comment = data.getComment();

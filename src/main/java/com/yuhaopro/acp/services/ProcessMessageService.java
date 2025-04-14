@@ -29,7 +29,7 @@ public class ProcessMessageService {
     private final Gson gson = new Gson();
 
     private int recordCounter = 0;
-    private float runningTotalValue = 0;
+    private int runningTotalValue = 0;
     private float totalGood = 0;
     private float totalBad = 0;
     private boolean exceedMessageCount = false;
