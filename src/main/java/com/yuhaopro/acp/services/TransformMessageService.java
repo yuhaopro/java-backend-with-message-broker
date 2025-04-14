@@ -55,7 +55,7 @@ public class TransformMessageService {
                 logger.info("Message: {}", message);
                 transformMessage(message, requestBody.getWriteQueue());
 
-                if (totalMessagesProcessed.get() > requestBody.getMessageCount()) {
+                if (totalMessagesProcessed.get() >= requestBody.getMessageCount()) {
                     channel.basicCancel(consumerTag);
                     return;
                 }
