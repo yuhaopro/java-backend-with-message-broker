@@ -43,13 +43,15 @@ public class TransformMessageService {
         try (Channel channel = rabbitMqService.getConnection().createChannel()) {
 
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-                if (totalMessagesProcessed.get() >= requestBody.getMessageCount()) {
+
+                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
+                logger.info("Message: {}", message);
+                transformMessage(message, requestBody.getWriteQueue());
+
+                if (totalMessagesProcessed.get() > requestBody.getMessageCount()) {
                     channel.basicCancel(consumerTag);
                     return;
                 }
-                String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
-                transformMessage(message, requestBody.getWriteQueue());
-
             };
 
             channel.basicConsume(requestBody.getReadQueue(), true, deliverCallback, consumerTagLocal -> {
@@ -71,7 +73,7 @@ public class TransformMessageService {
             // check key is in redis
             String version = redisService.readFromJedis(message);
             if (version == null || Integer.parseInt(version) < normalPacket.getVersion()) {
-                redisService.writeToJedis(normalPacket.getKey(), version);
+                redisService.writeToJedis(normalPacket.getKey(), String.valueOf(normalPacket.getVersion()));
                 double value = normalPacket.getValue();
                 value = value + ADDED_VALUE;
                 normalPacket.setValue(value);
