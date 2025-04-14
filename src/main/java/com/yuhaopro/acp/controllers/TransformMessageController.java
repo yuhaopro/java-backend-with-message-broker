@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.yuhaopro.acp.services.TransformMessageService;
 import com.yuhaopro.acp.data.transform.RequestBodyPOJO;
 
-@RestController
+@RestController()
 public class TransformMessageController {
     private Logger logger = LoggerFactory.getLogger(TransformMessageController.class);
     private TransformMessageService transformMessageService;
