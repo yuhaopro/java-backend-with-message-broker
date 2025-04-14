@@ -59,10 +59,12 @@ public class KafkaService {
     }
 
     public KafkaProducer<String, String> createKafkaProducer() {
+        logger.info("Creating Kafka Producer...");
         return new KafkaProducer<>(kafkaProps);
     }
 
     public KafkaConsumer<String, String> createKafkaConsumer() {
+        logger.info("Creating Kafka Consumer...");
         return new KafkaConsumer<>(kafkaProps);
     }
 

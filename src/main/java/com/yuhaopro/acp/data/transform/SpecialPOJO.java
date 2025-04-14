@@ -1,7 +1,6 @@
 package com.yuhaopro.acp.data.transform;
 
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 
 @Data
 public class SpecialPOJO {

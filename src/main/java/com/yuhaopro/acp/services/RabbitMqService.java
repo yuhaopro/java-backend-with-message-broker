@@ -2,7 +2,6 @@ package com.yuhaopro.acp.services;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DeliverCallback;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
 
 import jakarta.annotation.PreDestroy;
