@@ -1,23 +1,33 @@
 services:
 
   java_backend:
-    build: .
+    image: acp_cw2
     networks:
       - acp_network
     ports:
       - 8080:8080
+    environment:
+      REDIS_HOST: host.docker.internal
+      REDIS_PORT: 6379
+
+      RABBITMQ_HOST: host.docker.internal
+      RABBITMQ_PORT: 5672
+
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      ACP_STORAGE_SERVICE: https://acp-storage.azurewebsites.net/      
     depends_on:
       kafka:
-        condition: service_healthy
+        condition: service_started
         restart: true
-      rabbitmq-management:
-        condition: service_healthy
+      rabbitmq:
+        condition: service_started
         restart: true
       redis:
-        condition: service_healthy
+        condition: service_started
         restart: true
 
   kafka:
+    container_name: kafka
     image: apache/kafka-native
     networks:
       - acp_network
@@ -42,13 +52,15 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
         
 
-  rabbitmq-management:
+  rabbitmq:
+    container_name: rabbitmq
     image: rabbitmq:4.0-management
     ports:
       - "5672:5672"
       - "15672:15672"
 
   redis:
+    container_name: redis
     image: redis/redis-stack:latest
     ports:
       - "6379:6379"
