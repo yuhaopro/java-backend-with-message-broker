@@ -71,7 +71,7 @@ public class TransformMessageService {
             NormalPOJO normalPacket = gson.fromJson(message, NormalPOJO.class);
 
             // check key is in redis
-            String version = redisService.readFromJedis(message);
+            String version = redisService.readFromJedis(normalPacket.getKey());
             if (version == null || Integer.parseInt(version) < normalPacket.getVersion()) {
                 redisService.writeToJedis(normalPacket.getKey(), String.valueOf(normalPacket.getVersion()));
                 double value = normalPacket.getValue();
