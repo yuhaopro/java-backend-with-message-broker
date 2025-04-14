@@ -32,6 +32,7 @@ public class ProcessMessageService {
     private float runningTotalValue = 0;
     private float totalGood = 0;
     private float totalBad = 0;
+    private boolean exceedMessageCount = false;
 
     public ProcessMessageService(RuntimeEnvironment environment, KafkaService kafkaService,
             RabbitMqService rabbitMqService, AcpStorageService acpStorageService) {
@@ -46,7 +47,7 @@ public class ProcessMessageService {
         try (KafkaConsumer<String, String> consumer = kafkaService.createKafkaConsumer()) {
             consumer.subscribe(Collections.singletonList(requestBodyPOJO.getReadTopic()));
 
-            while (recordCounter <= requestBodyPOJO.getMessageCount()) {
+            while (!exceedMessageCount) {
 
                 ConsumerRecords<String, String> records = consumer
                         .poll(Duration.ofMillis(environment.getKafkaPollingTimeout()));
@@ -57,6 +58,10 @@ public class ProcessMessageService {
                     processMessage(singleRecord.value(), requestBodyPOJO.getWriteQueueGood(),
                             requestBodyPOJO.getWriteQueueBad());
 
+                    if (recordCounter == requestBodyPOJO.getMessageCount()) {
+                        exceedMessageCount = true;
+                        break;
+                    }
                 }
             }
 
