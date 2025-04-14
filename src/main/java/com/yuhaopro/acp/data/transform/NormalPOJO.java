@@ -6,5 +6,5 @@ import lombok.Data;
 public class NormalPOJO {
     private String key;
     private int version;
-    private float value;
+    private double value;
 }
