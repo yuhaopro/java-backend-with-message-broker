@@ -17,11 +17,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DeliverCallback;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
+import com.yuhaopro.acp.data.transform.NormalPOJO;
+import com.yuhaopro.acp.data.transform.TombstonePOJO;
 import com.yuhaopro.acp.services.RabbitMqService;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 /**
  * RabbitMqController is a REST controller that provides endpoints for sending
@@ -35,12 +41,24 @@ public class RabbitMqController {
 
     private static final Logger logger = LoggerFactory.getLogger(RabbitMqController.class);
     private final RuntimeEnvironment environment;
-
     private final RabbitMqService rabbitMqService;
+    private final Gson gson = new Gson();
 
     public RabbitMqController(RuntimeEnvironment environment, RabbitMqService rabbitMqService) {
         this.environment = environment;
         this.rabbitMqService = rabbitMqService;
+    }
+
+    @PostMapping("/{queueName}/normal")
+    public void writeNormalPOJO(@PathVariable String queueName, @RequestBody NormalPOJO normalPOJO) {
+        String normalMessage = gson.toJson(normalPOJO);
+        rabbitMqService.writeToQueue(queueName, normalMessage.getBytes());
+    }
+    
+    @PostMapping("/{queueName}/tombstone")
+    public void writeTombstonePOJO(@PathVariable String queueName, @RequestBody TombstonePOJO tombstonePOJO) {
+        String tombstoneMessage = gson.toJson(tombstonePOJO);
+        rabbitMqService.writeToQueue(queueName, tombstoneMessage.getBytes());
     }
 
     @PutMapping("/{queueName}/{messageCount}")

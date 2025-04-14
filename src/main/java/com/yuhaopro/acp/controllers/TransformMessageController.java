@@ -19,6 +19,7 @@ public class TransformMessageController {
 
     @PostMapping("/transformMessages")
     public void transformMessages(@RequestBody RequestBodyPOJO requestBody) {
+        logger.debug("Transforming Messages");
         transformMessageService.transformMessages(requestBody);
     }
 

@@ -37,9 +37,10 @@ services:
       - "15672:15672"
 
   redis:
-    image: redis
+    image: redis/redis-stack:latest
     ports:
       - "6379:6379"
+      - "8001:8001"
 
 networks:
   acp_network:
