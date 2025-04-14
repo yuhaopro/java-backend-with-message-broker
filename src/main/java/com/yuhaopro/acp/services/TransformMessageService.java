@@ -40,8 +40,14 @@ public class TransformMessageService {
     }
 
     public void transformMessages(RequestBodyPOJO requestBody) {
-        try (Channel channel = rabbitMqService.getConnection().createChannel()) {
-
+        /**
+         * Channel gets closed after the end of the try block,
+         * but basic consume is still running in the background.
+         * Not all data gets consumed and written, thus leading to errors.
+         */
+        try {
+            
+            Channel channel = rabbitMqService.getChannel();
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 
                 String message = new String(delivery.getBody(), StandardCharsets.UTF_8);

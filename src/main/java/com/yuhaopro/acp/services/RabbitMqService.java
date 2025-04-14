@@ -21,6 +21,7 @@ public class RabbitMqService {
     private Logger logger = LoggerFactory.getLogger((RabbitMqService.class));
     private ConnectionFactory factory = null;
     private Connection connection = null;
+    private Channel channel = null;
 
     public RabbitMqService(RuntimeEnvironment environment) throws IOException, TimeoutException {
         factory = new ConnectionFactory();
@@ -28,6 +29,7 @@ public class RabbitMqService {
         factory.setPort(environment.getRabbitMqPort());
 
         this.connection = createConnection();
+        this.channel = this.connection.createChannel();
     }
 
     public Connection createConnection() throws IOException, TimeoutException {
@@ -35,7 +37,7 @@ public class RabbitMqService {
     }
 
     public void writeToQueue(String queueName, byte[] messageBytes) {
-        try (Channel channel = connection.createChannel()) {
+        try {
 
             channel.queueDeclare(queueName, false, false, false, null);
             channel.basicPublish("", queueName, null, messageBytes);

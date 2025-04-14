@@ -11,7 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,14 +21,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DeliverCallback;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
 import com.yuhaopro.acp.data.transform.NormalPOJO;
 import com.yuhaopro.acp.data.transform.TombstonePOJO;
 import com.yuhaopro.acp.services.RabbitMqService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 
 /**
@@ -91,9 +90,8 @@ public class RabbitMqController {
         logger.info("Reading messages from queue {} with timeout {} ms", queueName, timeoutInMsec);
         List<String> results = Collections.synchronizedList(new ArrayList<>());
 
-        try (Connection connection = rabbitMqService.createConnection();
-                Channel channel = connection.createChannel()) {
-
+        try {
+            Channel channel = rabbitMqService.getChannel();
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 
                 String message = new String(delivery.getBody(), StandardCharsets.UTF_8);
