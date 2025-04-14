@@ -29,7 +29,7 @@ public class ProcessMessageService {
     private final Gson gson = new Gson();
 
     private int recordCounter = 0;
-    private int runningTotalValue = 0;
+    private float runningTotalValue = 0;
     private float totalGood = 0;
     private float totalBad = 0;
     private boolean exceedMessageCount = false;
@@ -79,7 +79,7 @@ public class ProcessMessageService {
         String key = kafkaData.getKey();
 
         if (key.length() == 3 || key.length() == 4) {
-            this.runningTotalValue += 1;
+            this.runningTotalValue += kafkaData.getValue();
 
             AcpStoragePOJO acpStorageData = new AcpStoragePOJO(kafkaData, runningTotalValue);
             String uuid = acpStorageService.postToStorage(acpStorageData);
