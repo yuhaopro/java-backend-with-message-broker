@@ -71,16 +71,10 @@ public class RabbitMqController {
             data.put("uid", uuid);
             data.put("counter", i.toString());
 
-            ObjectMapper objectMapper = new ObjectMapper();
-            String jsonMessage;
-            try {
-                jsonMessage = objectMapper.writeValueAsString(data);
-                // using nameless exchange
-                rabbitMqService.writeToQueue(queueName, jsonMessage.getBytes());
-                logger.info(" [x] Sent message: {} to queue: {}", jsonMessage, queueName);
-            } catch (JsonProcessingException e) {
-                logger.error("Failed to write data to json", e);
-            }
+            String jsonMessage = gson.toJson(data);
+            // using nameless exchange
+            rabbitMqService.writeToQueue(queueName, jsonMessage.getBytes());
+            logger.info(" [x] Sent message: {} to queue: {}", jsonMessage, queueName);
 
         }
     }

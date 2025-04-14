@@ -13,6 +13,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
 import com.yuhaopro.acp.data.process.KafkaPOJO;
 import com.yuhaopro.acp.services.KafkaService;
@@ -39,6 +41,7 @@ public class KafkaController {
     private static final Logger logger = LoggerFactory.getLogger(KafkaController.class);
 
     private KafkaService kafkaService;
+    private final Gson gson = new Gson();
 
     public KafkaController(KafkaService kafkaService, RuntimeEnvironment environment) {
         this.kafkaService = kafkaService;
@@ -46,9 +49,8 @@ public class KafkaController {
     }
 
     @PutMapping("/{writeTopic}/{messageCount}")
-    public void writeToKafkaTopic(@PathVariable String writeTopic, @PathVariable int messageCount)
-            throws JsonProcessingException {
-        try (var producer = kafkaService.createKafkaProducer()) {
+    public void writeToKafkaTopic(@PathVariable String writeTopic, @PathVariable int messageCount) {
+        try (KafkaProducer<String, String> producer = kafkaService.createKafkaProducer()) {
             for (Integer i = 0; i < messageCount; i++) {
                 final String uuid = environment.getStudentNumber();
 
@@ -56,8 +58,7 @@ public class KafkaController {
                 data.put("uid", uuid);
                 data.put("counter", i.toString());
 
-                ObjectMapper objectMapper = new ObjectMapper();
-                String jsonMessage = objectMapper.writeValueAsString(data);
+                String jsonMessage = gson.toJson(data);
 
                 producer.send(new ProducerRecord<>(writeTopic, uuid, jsonMessage), (recordMetadata, ex) -> {
                     if (ex != null) {
