@@ -1,4 +1,22 @@
 services:
+
+  java_backend:
+    build: .
+    networks:
+      - acp_network
+    ports:
+      - 8080:8080
+    depends_on:
+      kafka:
+        condition: service_healthy
+        restart: true
+      rabbitmq-management:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+        restart: true
+
   kafka:
     image: apache/kafka-native
     networks:
@@ -22,13 +40,7 @@ services:
 
       # Required for a single node cluster
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-  # rabbitmq:
-  #   image: rabbitmq:latest
-  #   networks:
-  #     - acp_network
-  #   ports:
-  #     - "5672:5672"
+        
 
   rabbitmq-management:
     image: rabbitmq:4.0-management

@@ -68,8 +68,4 @@ public class AcpStorageService {
         return input;
     }
 
-    public void  getFromStorage(String uuid) {
-        
-    }
-
 }
