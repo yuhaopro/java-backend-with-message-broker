@@ -15,7 +15,6 @@ import org.springframework.web.client.RestTemplate;
 import com.yuhaopro.acp.data.RuntimeEnvironment;
 import com.yuhaopro.acp.data.process.AcpStoragePOJO;
 
-
 // send request to acp storage.
 @Service
 public class AcpStorageService {
@@ -38,11 +37,11 @@ public class AcpStorageService {
         try {
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(
                     environment.getAcpStorageUrl() + "api/v1/blob",
-                    requestEntity,       
-                    String.class    
-            );
+                    requestEntity,
+                    String.class);
 
-            if (responseEntity.getStatusCode() == HttpStatus.OK || responseEntity.getStatusCode() == HttpStatus.CREATED) {
+            if (responseEntity.getStatusCode() == HttpStatus.OK
+                    || responseEntity.getStatusCode() == HttpStatus.CREATED) {
                 uuid = responseEntity.getBody();
                 uuid = removeSurroundingQuotes(uuid);
                 logger.info("Successfully posted data. Received UUID: {}", uuid);
@@ -56,12 +55,12 @@ public class AcpStorageService {
             logger.error("UUID is null");
         }
 
-    return uuid;
+        return uuid;
     }
 
     public static String removeSurroundingQuotes(String input) {
-        if (input != null && input.length() >= 2 && 
-            input.startsWith("\"") && input.endsWith("\"")) {
+        if (input != null && input.length() >= 2 &&
+                input.startsWith("\"") && input.endsWith("\"")) {
             // Extract the substring between the first and last characters
             return input.substring(1, input.length() - 1);
         }
