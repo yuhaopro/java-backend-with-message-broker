@@ -44,9 +44,10 @@ public class TransformMessageService {
          * Channel gets closed after the end of the try block,
          * but basic consume is still running in the background.
          * Not all data gets consumed and written, thus leading to errors.
+         * So reuse the channel from rabbitMqService
          */
         try {
-            
+
             Channel channel = rabbitMqService.getChannel();
             DeliverCallback deliverCallback = (consumerTag, delivery) -> {
 
