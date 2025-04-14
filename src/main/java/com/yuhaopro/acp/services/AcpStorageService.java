@@ -37,7 +37,7 @@ public class AcpStorageService {
 
         try {
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(
-                    environment.getAcpStorageUrl(),
+                    environment.getAcpStorageUrl() + "api/v1/blob",
                     requestEntity,       
                     String.class    
             );

@@ -21,7 +21,7 @@ public class RuntimeEnvironment {
     public static final String KAFKA_SASL_MECHANISM_ENV_VAR = "KAFKA_SASL_MECHANISM";
     public static final String KAFKA_SASL_JAAS_CONFIG_ENV_VAR = "KAFKA_SASL_JAAS_CONFIG";
 
-    public static final String ACP_STORAGE_URL = "ACP_STORAGE_URL";
+    public static final String ACP_STORAGE_SERVICE_ENV_VAR = "ACP_STORAGE_SERVICE";
 
     private String redisHost;
     private int redisPort;
@@ -59,7 +59,7 @@ public class RuntimeEnvironment {
         settings.setRedisPort(System.getenv(REDIS_PORT_ENV_VAR) == null ? 6379 : Integer.parseInt(System.getenv(REDIS_PORT_ENV_VAR)));
         settings.setRabbitMqHost(System.getenv(RABBITMQ_HOST_ENV_VAR) == null ? "localhost" : System.getenv(RABBITMQ_HOST_ENV_VAR));
         settings.setRabbitMqPort(System.getenv(RABBITMQ_PORT_ENV_VAR) == null ? 5672 : Integer.parseInt(System.getenv(RABBITMQ_PORT_ENV_VAR)));
-        settings.setAcpStorageUrl(System.getenv(ACP_STORAGE_URL) == null ? "https://acp-storage.azurewebsites.net/api/v1/blob": System.getenv(ACP_STORAGE_URL));
+        settings.setAcpStorageUrl(System.getenv(ACP_STORAGE_SERVICE_ENV_VAR) == null ? "https://acp-storage.azurewebsites.net/": System.getenv(ACP_STORAGE_SERVICE_ENV_VAR));
 
         settings.setKafkaPollingTimeout(2000);
         settings.setStudentNumber("s2768394");
