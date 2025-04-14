@@ -3,6 +3,7 @@ package com.yuhaopro.acp.services;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class KafkaService {
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.setProperty("enable.auto.commit", "true");
         props.put("acks", "all");
-
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1000000);
         props.put("group.id", UUID.randomUUID().toString());
         props.setProperty("auto.offset.reset", "earliest");
         props.setProperty("enable.auto.commit", "true");
