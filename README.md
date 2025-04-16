@@ -19,6 +19,7 @@ alt="Apache Kafka">
 
 ## How To Use
 Import the Postman collection to try out the API endpoints!
+A description of the project can be found in the `report.pdf`.
 
 Before running the commands below which will install the dependencies and run the executable, ensure that Kafka, RabbitMQ and Redis containers are up.
 ```bash
@@ -47,9 +48,3 @@ $ java -jar target/acp-0.0.1-SNAPSHOT.jar
 ## Credits
 
 This is part of my cloud programming coursework in the University of Edinburgh. Hope you like it! 
-
-This software uses the following open source packages:
-
-- [jsqparser](https://github.com/JSQLParser/JSqlParser)
-
----
