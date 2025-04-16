@@ -44,7 +44,6 @@ public class KafkaService {
         props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1000000);
         props.put("group.id", UUID.randomUUID().toString());
         props.setProperty("auto.offset.reset", "earliest");
-        props.setProperty("enable.auto.commit", "true");
 
         if (environment.getKafkaSecurityProtocol() != null) {
             props.put("security.protocol", environment.getKafkaSecurityProtocol());
