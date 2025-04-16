@@ -33,10 +33,14 @@ public class AcpStorageService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<AcpStoragePOJO> requestEntity = new HttpEntity<>(data, headers);
+        String postfix = "/api/v1/blob";
+        if (environment.getAcpStorageUrl().endsWith("/")) {
+            postfix = "api/v1/blob";
+        }
 
         try {
             ResponseEntity<String> responseEntity = restTemplate.postForEntity(
-                    environment.getAcpStorageUrl() + "api/v1/blob",
+                    environment.getAcpStorageUrl() + postfix,
                     requestEntity,
                     String.class);
 
