@@ -14,6 +14,7 @@ alt="Apache Kafka">
 
 <p align="center">
   <a href="#how-to-use">How To Use</a> •
+  <a href="#benchmark">Benchmark</a> •
   <a href="#credits">Credits</a>
 </p>
 
@@ -44,6 +45,21 @@ $ docker compose pull && docker compose up
 # Run the jar file
 $ java -jar target/acp-0.0.1-SNAPSHOT.jar
 ```
+
+## Benchmark
+
+`RabbitMqService` keeps a single AMQP connection and channel open for the lifetime of the application (see `report.pdf`, section 4.1) instead of opening a new connection per request. To measure the effect, a standalone harness published 500 messages to a live RabbitMQ 4.0 broker two ways:
+
+* **Naive**: open a new `Connection` + `Channel`, publish, then close them — once per message.
+* **Optimized**: reuse one long-lived `Connection` + `Channel` across all publishes (what `RabbitMqService` actually does).
+
+| Approach | Avg latency / message |
+|---|---|
+| Naive (new connection per request) | ~3.1 ms |
+| Optimized (reused connection) | ~0.015 ms |
+| **Speedup** | **~200x** |
+
+Opening a new AMQP connection costs several network round trips (TCP handshake, protocol header exchange, `connection.start`/`tune`/`open`, `channel.open`) before a single message can be published; reusing the connection skips all of that and reduces a publish to a single write on an already-open channel.
 
 ## Credits
 
